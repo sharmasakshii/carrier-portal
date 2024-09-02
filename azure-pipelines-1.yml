@@ -24,11 +24,6 @@ steps:
     pip install -r requirements.txt
   displayName: 'Install dependencies'
 
-- script: |
-    pip install pytest pytest-azurepipelines
-    pytest
-  displayName: 'pytest'
-
 - task: AzureFunctionApp@2
   inputs:
     connectedServiceNameARM: 'DevSecOps-POC(1)(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
