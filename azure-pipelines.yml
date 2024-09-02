@@ -13,14 +13,21 @@ stages:
     - job: Setup
       displayName: Setup
       steps:
-      - task: NodeTool@0
+      - task: UsePythonVersion@0
         inputs:
-          versionSpec: '18.x'
-        displayName: 'Install Node.js'
+          versionSpec: '3.x'
+          addToPath: true
+        displayName: 'Install Python'
+
+      - script: |
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+        displayName: 'Install dependencies'
         
       - script: |
-          npm install
-          npm test
+          source venv/bin/activate
+          pytest
         displayName: 'Run Tests'
 
   - stage: BUILD
@@ -32,14 +39,21 @@ stages:
         vmImage: ubuntu-latest
 
       steps:
-      - task: NodeTool@0
+      - task: UsePythonVersion@0
         inputs:
-          versionSpec: '18.x'
-        displayName: 'Install Node.js'
+          versionSpec: '3.x'
+          addToPath: true
+        displayName: 'Install Python'
 
       - script: |
-          npm install
-          npm run build
+          python -m venv venv
+          source venv/bin/activate
+          pip install -r requirements.txt
+        displayName: 'Install dependencies'
+
+      - script: |
+          source venv/bin/activate
+          python setup.py sdist bdist_wheel
         displayName: 'Prepare binaries'
 
       - task: ArchiveFiles@2
