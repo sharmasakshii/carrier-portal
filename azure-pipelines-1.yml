@@ -1,13 +1,9 @@
-# Python package
-# Create and test a Python package on multiple Python versions.
-# Add steps that analyze code, save the dist with the build record, publish to a PyPI-compatible index, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/python
-
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
+
 strategy:
   matrix:
     Python311:
@@ -41,11 +37,12 @@ steps:
     artifactName: drop
   displayName: 'Upload artifacts'
 
+# Step 8: Deploy to Azure Function App
 - task: AzureFunctionApp@2
   inputs:
     connectedServiceNameARM: 'DevSecOps-POC(1)(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
     appType: 'functionAppLinux'
     appName: 'carrier-portal001-functionapp'
-    package: '$(System.DefaultWorkingDirectory)/**/*.zip'
+    package: '$(Pipeline.Workspace)/drop/**/*.zip'
     runtimeStack: 'PYTHON|3.11'
     deploymentMethod: 'auto'
