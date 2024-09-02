@@ -43,6 +43,6 @@ steps:
     connectedServiceNameARM: 'DevSecOps-POC(1)(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
     appType: 'functionAppLinux'
     appName: 'carrier-portal001-functionapp'
-    package: '$(Pipeline.Workspace)/drop/**/*.zip'
+    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
     runtimeStack: 'PYTHON|3.11'
     deploymentMethod: 'auto'
