@@ -1,48 +1,55 @@
 trigger:
 - main
 
+pr: none
+
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-20.04'
 
-strategy:
-  matrix:
-    Python311:
-      python.version: '3.11'
+stages:
+- stage: BUILD
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+        addToPath: true
+        architecture: 'x64'
+    
+    - bash: |
+        pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
+      workingDirectory: $(System.DefaultWorkingDirectory)
+      displayName: 'Install dependencies'
 
-steps:
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '$(python.version)'
-  displayName: 'Use Python $(python.version)'
+    - task: ArchiveFiles@2
+      displayName: 'Archive files'
+      inputs:
+        rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+        includeRootFolder: false
+        archiveType: zip
+        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        replaceExistingArchive: true
+    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+      artifact: drop
 
-- script: |
-    python -m pip install --upgrade pip
-    pip install -r requirements.txt
-  displayName: 'Install dependencies'
-
-# Step 6: Archive files
-- task: ArchiveFiles@2
-  displayName: 'Archive files'
-  inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-    includeRootFolder: false
-    archiveType: zip
-    archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    replaceExistingArchive: true
-
-# Step 7: Publish build artifacts
-- task: PublishBuildArtifacts@1
-  inputs:
-    pathToPublish: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    artifactName: drop
-  displayName: 'Upload artifacts'
-
-# Step 8: Deploy to Azure Function App
-- task: AzureFunctionApp@2
-  inputs:
-    connectedServiceNameARM: 'DevSecOps-POC(1)(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
-    appType: 'functionAppLinux'
-    appName: 'carrier-portal001-functionapp'
-    package: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
-    runtimeStack: 'PYTHON|3.11'
-    deploymentMethod: 'auto'
+- stage: Deploy
+  displayName: Deploy stage
+  jobs:
+  - deployment: Deploy
+    displayName: Deploy
+    environment: 'DEV'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: AzureFunctionApp@1
+            displayName: 'Azure Functions App Deploy'
+            inputs:
+              azureSubscription: 'DevSecOps-POC(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
+              appType: 'functionAppLinux'
+              appName: 'carrier-portal001-functionapp'
+              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+              runtimeStack: 'PYTHON|3.11'
