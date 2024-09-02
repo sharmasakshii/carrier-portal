@@ -1,0 +1,79 @@
+trigger:
+- main
+
+pr: none
+
+pool:
+  vmImage: 'ubuntu-20.04'
+
+stages:
+  - stage: Setup
+    displayName: Setup stage
+    jobs:
+    - job: Setup
+      displayName: Setup
+      steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '18.x'
+        displayName: 'Install Node.js'
+        
+      - script: |
+          npm install
+          npm test
+        displayName: 'Run Tests'
+
+  - stage: BUILD
+    displayName: Build stage
+    jobs:
+    - job: Build
+      displayName: Build
+      pool:
+        vmImage: ubuntu-latest
+
+      steps:
+      - task: NodeTool@0
+        inputs:
+          versionSpec: '18.x'
+        displayName: 'Install Node.js'
+
+      - script: |
+          npm install
+          npm run build
+        displayName: 'Prepare binaries'
+
+      - task: ArchiveFiles@2
+        displayName: 'Archive files'
+        inputs:
+          rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+          includeRootFolder: false
+          archiveType: zip
+          archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+          replaceExistingArchive: true
+          
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+          artifactName: drop
+        displayName: 'Upload artifacts'
+
+  - stage: Deploy
+    displayName: Deploy stage
+    jobs:
+    - deployment: Deploy
+      displayName: Deploy
+      environment: qa
+      pool:
+        vmImage: ubuntu-20.04
+      strategy:
+        runOnce:
+          deploy:
+            steps:
+            - task: AzureFunctionApp@1
+              displayName: 'Azure Functions App Deploy: $(FUNCTION_APP_NAME1)'
+              inputs:
+                azureSubscription: 'DevSecOps-POC(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
+                appType: 'functionAppLinux'
+                appName: 'carrier-portal001-functionapp'
+                package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+                runtimeStack: 'PYTHON|3.11'
