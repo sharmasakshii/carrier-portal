@@ -7,54 +7,22 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 stages:
-  - stage: Setup
-    displayName: Setup stage
-    jobs:
-    - job: Setup
-      displayName: Setup
-      steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: '3.x'
-          addToPath: true
-        displayName: 'Install Python'
-
-      - script: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-        displayName: 'Install dependencies'
-        
-      - script: |
-          source venv/bin/activate
-          pytest
-        displayName: 'Run Tests'
-
-  - stage: BUILD
-    displayName: Build stage
-    jobs:
-    - job: Build
-      displayName: Build
-      pool:
-        vmImage: ubuntu-latest
-
-      steps:
-      - task: UsePythonVersion@0
-        inputs:
-          versionSpec: '3.x'
-          addToPath: true
-        displayName: 'Install Python'
-
-      - script: |
-          python -m venv venv
-          source venv/bin/activate
-          pip install -r requirements.txt
-        displayName: 'Install dependencies'
-
-      - script: |
-          source venv/bin/activate
-          python setup.py sdist bdist_wheel
-        displayName: 'Prepare binaries'
+- stage: BUILD
+  displayName: Build stage
+  jobs:
+  - job: Build
+    displayName: Build
+    steps:
+    - task: UsePythonVersion@0
+      inputs:
+        versionSpec: '3.11'
+        addToPath: true
+        architecture: 'x64'
+    
+    - bash: |
+        pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
+      workingDirectory: $(System.DefaultWorkingDirectory)
+      displayName: 'Install dependencies'
 
       - task: ArchiveFiles@2
         displayName: 'Archive files'
