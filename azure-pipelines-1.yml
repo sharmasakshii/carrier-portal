@@ -1,5 +1,5 @@
 trigger:
-- main
+  - main
 
 pr: none
 
@@ -7,8 +7,18 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 stages:
+- stage: code_check
+  displayName: Code Check
+  jobs:
+  - job: publishreport
+    displayName: Publish Report
+    steps:
+    - task: PublishCodeCoverageResults@2
+      inputs:
+        summaryFileLocation: 'coverage/clover.xml'
+
 - stage: BUILD
-  displayName: Build stage
+  displayName: Build Stage
   jobs:
   - job: Build
     displayName: Build
@@ -22,34 +32,35 @@ stages:
     - bash: |
         pip install --target="./.python_packages/lib/site-packages" -r ./requirements.txt
       workingDirectory: $(System.DefaultWorkingDirectory)
-      displayName: 'Install dependencies'
+      displayName: 'Install Dependencies'
 
     - task: ArchiveFiles@2
-      displayName: 'Archive files'
+      displayName: 'Archive Files'
       inputs:
         rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
         includeRootFolder: false
         archiveType: zip
-        archiveFile: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+        archiveFile: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
         replaceExistingArchive: true
-    - upload: $(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip
+
+    - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: drop
 
-- stage: Deploy
-  displayName: Deploy stage
-  jobs:
-  - deployment: Deploy
-    displayName: Deploy
-    environment: 'DEV'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: AzureFunctionApp@1
-            displayName: 'Azure Functions App Deploy'
-            inputs:
-              azureSubscription: 'DevSecOps-POC(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
-              appType: 'functionAppLinux'
-              appName: 'carrier-portal001-functionapp'
-              package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-              runtimeStack: 'PYTHON|3.11'
+# - stage: Deploy
+#   displayName: Deploy Stage
+#   jobs:
+#   - deployment: Deploy
+#     displayName: Deploy
+#     environment: 'DEV'
+#     strategy:
+#       runOnce:
+#         deploy:
+#           steps:
+#           - task: AzureFunctionApp@1
+#             displayName: 'Azure Functions App Deploy'
+#             inputs:
+#               azureSubscription: 'DevSecOps-POC(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
+#               appType: 'functionAppLinux'
+#               appName: 'carrier-portal001-functionapp'
+#               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
+#               runtimeStack: 'PYTHON|3.11'
