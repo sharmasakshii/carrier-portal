@@ -16,7 +16,7 @@ stages:
     steps:   
     - task: ManualValidation@1  # Ensure the correct major version is specified
       inputs:
-        notifyUsers: 'sisakshi5@gmail.com'
+        notifyUsers: 'sharmasakshi1@seasiainfotech.com'
         instructions: 'Please validate the build configuration and resume'
 
 - stage: code_check
