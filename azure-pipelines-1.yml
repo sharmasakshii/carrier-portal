@@ -7,6 +7,18 @@ pool:
   vmImage: 'ubuntu-20.04'
 
 stages:
+- stage: check_validation
+  displayName: Check validation
+  jobs:
+  - job: waitForValidation
+    pool: server
+    displayName: Manual Validation
+    steps:   
+    - task: ManualValidation@1  # Ensure the correct major version is specified
+      inputs:
+        notifyUsers: 'sharmasakshi1@seasiainfotech.com'
+        instructions: 'Please validate the build configuration and resume'
+
 - stage: code_check
   displayName: Code Check
   jobs:
@@ -45,22 +57,3 @@ stages:
 
     - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: drop
-
-# - stage: Deploy
-#   displayName: Deploy Stage
-#   jobs:
-#   - deployment: Deploy
-#     displayName: Deploy
-#     environment: 'DEV'
-#     strategy:
-#       runOnce:
-#         deploy:
-#           steps:
-#           - task: AzureFunctionApp@1
-#             displayName: 'Azure Functions App Deploy'
-#             inputs:
-#               azureSubscription: 'DevSecOps-POC(7bf779a3-afae-4ce9-8fb5-6d00f6346bb8)'
-#               appType: 'functionAppLinux'
-#               appName: 'carrier-portal001-functionapp'
-#               package: '$(Pipeline.Workspace)/drop/$(Build.BuildId).zip'
-#               runtimeStack: 'PYTHON|3.11'
