@@ -14,7 +14,7 @@ stages:
     pool: server
     displayName: Manual Validation
     steps:   
-    - task: ManualValidation@1  # Ensure the correct major version is specified
+    - task: ManualValidation@1
       inputs:
         notifyUsers: 'sharmasakshi1@seasiainfotech.com'
         instructions: 'Please validate the build configuration and resume'
@@ -57,3 +57,18 @@ stages:
 
     - upload: '$(Build.ArtifactStagingDirectory)/$(Build.BuildId).zip'
       artifact: drop
+
+- stage: Deploy
+  displayName: Deploy Stage with Approval
+  dependsOn: BUILD
+  jobs:
+  - deployment: DeployJob
+    displayName: Deployment Job
+    environment: DEV  # Define the environment
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - bash: |
+              echo "Deploying application..."
+            displayName: 'Deploy Application'
